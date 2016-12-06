@@ -28,9 +28,9 @@
 
 */
 var $ = jQuery;
-var urlws = 'http://lvd.pizotesoft.com/';
-//urlws = 'http://app.clx.mobi/';
-
+//var urlws = 'http://lvd.pizotesoft.com/';
+urlws = 'http://vdd.clx.mobi/';
+var h2_top = $('#dejar_premier_h2').position().top;
 //1. Screen Timeline
 	//Variables
 var screen_timeline = $("#screen_timeline");
@@ -45,6 +45,7 @@ var active_form_report = '';
 var name_input_report = '';
 var ajax_report = null;
 var victim = null;
+var offset = 0;
 screen_timeline.wrapper = screen_timeline.find('wrapper');
 
 
@@ -54,14 +55,17 @@ screen_timeline.wrapper.on('scroll', function(event) {
 	var st = $(this).scrollTop();
     var ih = $(this).innerHeight();
     if(st + ih >= this.scrollHeight) {
-        screen_timeline.wrapper.append('<div id="loadmore"><br><br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br></div>');
-        offset = $("post").length;
-        console.log(offset);
-    	get_feeds();
+    	
+    	if($('.loadmore').length==0){
+	        screen_timeline.wrapper.append('<div class="loadmore"><br><br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br></div>');
+	        offset = $("post").length;
+	        console.log(offset);
+	    	get_feeds();
+    	}
     }else if(st < -80){
     	offset = -1;
         screen_timeline.wrapper.scrollTop -= 40;
-    	screen_timeline.wrapper.prepend('<div id="loadmore"><br><br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br></div>');
+    	screen_timeline.wrapper.prepend('<div class="loadmore"><br><br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br></div>');
         get_feeds();
         return false;
     }
@@ -123,13 +127,13 @@ function refresh_from_nfeed(){
 function update_select_dropdown(){
     
     screen_timeline.wrapper = screen_timeline.find('wrapper');
-    var filtro = "admin"; //"todos"
+    var filtro = "todos"; //"todos"
     if(jQuery("#filtro_feeds_select").length > 0) filtro = jQuery("#filtro_feeds_select").val();
     console.log(jQuery("#filtro_feeds_select").length);
     console.log(filtro);
     $("#filtro_feeds_select").addClass('loading');
     if(filtro==''){
-        filtro='admin';
+        filtro='todos';
     }
     if(ajax_feed_dropdown==null){
     ajax_feed_dropdown = $.ajax({
@@ -170,7 +174,7 @@ var ajax_get_feeds = null;
 
 function get_feeds(){
     
-    var filtro = "admin"; //"todos"
+    var filtro = "todos"; 
     if(jQuery("#filtro_feeds_select").length > 0){ 
         filtro = jQuery("#filtro_feeds_select").val();
     }
@@ -179,7 +183,7 @@ function get_feeds(){
     console.log(filtro_text);
     console.log(offset);
     if(filtro==''){
-        filtro='admin';
+        filtro='todos';
     }
     if(offset == -1) {
         offset = 0;
@@ -201,7 +205,7 @@ function get_feeds(){
         type: 'post',
         data: {
     	
-	    	action: 'get_feeds',
+	    	action: 'get_feeds2', //antes get_feeds
 	        app: 'La voz de Dios',
 	        user_login: user_login,
 	        user_pass: user_pass,
@@ -214,10 +218,11 @@ function get_feeds(){
             filtro_text:filtro_text
         },
         success: function(a,b,c){
+        	$(".loadmore").remove();
             if(offset==0) {
                 screen_timeline.wrapper.html(a);
             }else {
-                $("#loadmore").remove();
+                
                 screen_timeline.wrapper.append(a);
             }
         },
@@ -225,6 +230,7 @@ function get_feeds(){
             console.log(b+' '+c);
         },
         complete: function(a,b,c){ ajax_feed = null;
+        /*
             $(".button_share").click(function(){
                 var img_url = $(this).data('share');
                 console.log(img_url);
@@ -237,7 +243,21 @@ function get_feeds(){
                     window.plugins.socialsharing.share(null,null,img_url,add_points('share'),function(){ console.log('no lo bajo');});
                 }
                 return false;
-            });
+            });*/
+        $(".button_share").click(function(){
+            var data_share = $(this).data('share');
+            var type = $(this).data('type');
+            console.log(data_share);
+            console.log(type);
+            if(type=='imagen'){
+            	 window.plugins.socialsharing.share(null,null,data_share,add_points('share'),function(){ console.log('no lo bajo');});
+                 
+            }else{
+                window.plugins.socialsharing.share(data_share,null,null,add_points('share'),function(){ console.log('no lo bajo');});
+                
+            }
+            return false;
+        });
             
             $(".button_comment").click(function(){
                 show_single(true,$(this).data("id"));
@@ -379,6 +399,11 @@ function alike(obj){
     
 }
 
+function cancel_report(){
+	$('input[name="denun"]:checked', '#denuncia_opciones').prop('checked', false);
+	return_report();
+	return true;
+}
 
 function report(obj){
 	obj_report = $(obj);
@@ -610,6 +635,7 @@ function get_trivia(){
 	                'Acumula puntos dobles en cada trivia acertada, conviértete en Miembro Premier.',
 	                function onConfirm(buttonIndex) {
 	                    if(buttonIndex==1){
+	                    	window.plugins.flurry.logEventWithParameters('Si, vamos',{desde:'trivias'},function(){},function(){});
 	                        scroll_suscripcion = true;
 	                        //show_perfil(true,user_data.ID);
 	                        show_screen('#screen_perfil');
@@ -730,10 +756,11 @@ screen_promos.wrapper = screen_promos.find('wrapper');
 screen_promos.scroller = screen_promos.find('scroller');
 screen_promos.promos = {};
 screen_promos.slider = null;
-
+var button_share_promo = null;
 var promo_id_actual = null;
 var img_promo_actual = '';
 var url_promo_actual = '';
+var share_text_promo = '';
 	//Funciones
 
 function get_promos(){
@@ -764,21 +791,22 @@ function get_promos(){
         	console.log(b+' '+c);
         },
         complete: function(a,b,c){
-        	if(screen_promos.promos[0]!="sin_pais"){
+        	var width = $(window).width();
+            var height = $(window).height();
+            
+            screen_promos.scroller.html('');
+            screen_promos.find('info').html('');
+            screen_promos.scroller.css('width',(width)+'px');//*screen_promos.promos.length)+'px');
+            //screen_promos.scroller.css('overflow-x','scroll');
+            screen_promos.wrapper.css('height',"92%");//(width)+'px');
+        	if(screen_promos.promos[0]!="sin_pais" && screen_promos.promos[0]!='sin_promo'){
         		
-	            var width = $(window).width();
-	            var height = $(window).height();
-	            console.log(width);
-	            screen_promos.scroller.html('');
-	            screen_promos.find('info').html('');
-	            screen_promos.scroller.css('width',(width*screen_promos.promos.length)+'px');
-	            screen_promos.scroller.css('overflow-x','scroll');
-	            screen_promos.wrapper.css('height',"92%");//(width)+'px');
+	            
 	            $.each(screen_promos.promos,function(idx,val){
 	            	
-	            	var button = '<button id="boton'+val.id+'" class="share_promo" onclick=" participar('+val.id+',\''+val.image+'\');">Participar</button>';
+	            	var button = '<button id="boton'+val.id+'" class="share_promo" onclick="window.plugins.flurry.logEvent(\'Participar Promo\',function(){},function(){});participar('+val.id+',\''+val.content+'\');">Participar</button>';
 	            	if(val.estoy_participando=="true"){
-	                	button = '<button id="boton'+val.id+'" style="width: 43%; float: left; margin-left: 5%;" class="share_promo" onclick=" no_participar('+val.id+',\''+val.image+'\');">Dejar de participar</button><button id="boton_share'+val.id+'"style="width: 40%; float: right; margin-right: 5%;" class="share_promo" onclick="share_promo(\''+val.image+'\');">Compartir</button>';
+	                	button = '<button id="boton'+val.id+'" style="width: 43%; float: left; margin-left: 5%;" class="share_promo" onclick="window.plugins.flurry.logEvent(\'Compartir Promo\',function(){},function(){});no_participar('+val.id+',\''+val.content+'\');">Dejar de participar</button><button id="boton_share'+val.id+'"style="width: 40%; float: right; margin-right: 5%;" class="share_promo" onclick="share_promo(\''+val.content+'\');">Compartir</button>';
 	                }
 	                
 	            	
@@ -790,36 +818,45 @@ function get_promos(){
 	                
 	            	
 	            });
-	            if($('.nelll').length > 0) $('.nelll').remove();
+	            //if($('.nelll').length > 0) $('.nelll').remove();
 	            /*
                 $('<img class="nelll" style="z-index: 100; display: block; pointer-events: none; position: absolute; top: '+(width/2)+'px; left:  5px;" width="5%;" src="img/larr.png"/>'
                   +'<img class="nelll" style="z-index: 100; display: block; pointer-events: none; position: absolute; top: '+(width/2)+'px; right: 5px;" width="5%;" src="img/rarr.png"/>'
                   ).insertAfter(screen_promos.wrapper);*/
-                if(promo!=undefined){
+               /* if(promo!=undefined){
 	            	console.log($("#"+promo).offset().left)
 	            	screen_promos.wrapper.animate({scrollLeft:""+$("#"+promo).offset().left},300);
-	            }
+	            }*/
 	            
 	            
-	        }else{
-	        	if($('.nelll').length > 0) $('.nelll').remove();
-	        	screen_promos.scroller.html('<p>Debes seleccionar un operador en tu perfil para ver promociones de tu país.</p>');
+	        }else if(screen_promos.promos[0]=="sin_pais"){
+	        	//if($('.nelll').length > 0) $('.nelll').remove();
+	        	screen_promos.scroller.html('<p style="text-align:center;margin-top:20%;">Debes seleccionar un operador en tu perfil para ver promociones de tu país.</p>');
+	        }else if(screen_promos.promos[0]=="sin_promo"){
+	        	console.log("entro sin promo");
+	        	screen_promos.scroller.append('<div class="slide_" style="float:left; width: '+(width)+'px !important;" > '+
+            			'<div style="width: '+(width-10)+'px; height: '+(width+60)+'px;margin:0 5px;">'+
+            	 		'<img style="opacity: 0; display: block; margin: 0 5px; width=100%!important; height:100%;" onload="on_load(this);" src="img/sin-promocion.jpg"/>' +
+            	 		'<br>'+
+            	 		'</div> </div>');
 	        }
         	promos_ajax = null;
         }
     });
 }
-
+function onConfirm(buttonIndex){
+	if(buttonIndex==1){
+    	window.plugins.flurry.logEventWithParameters('Si, vamos',{desde:'Participar Promos'},function(){},function(){});
+        
+        scroll_suscripcion = true;
+        show_screen('#screen_perfil');
+    }
+}
 function show_modal_participar(){
     if(typeof user_data.data.premium == 'undefined'){
         navigator.notification.confirm(
             'Para participar de todas las promociones debes convertirte en Miembro Premier, lo que te permitirá además, descargar música cristiana e inspiradoras imágenes a tu celular.',
-            function onConfirm(buttonIndex) {
-                if(buttonIndex==1){
-                    scroll_suscripcion = true;
-                    show_screen('#screen_perfil');
-                }
-            },            // callback to invoke with index of button pressed
+            onConfirm,            // callback to invoke with index of button pressed
             'Voz de Dios',           // title
             ['Continuar','Cancelar']     // buttonLabels
         );
@@ -828,10 +865,12 @@ function show_modal_participar(){
     }
 }
 
-function participar(promo_id,img_url,obj,img){
+//function participar(promo_id,img_url,obj,img){
+function participar(promo_id,text){
 	promo_id_actual = promo_id;
-    img_promo_actual = img_url;
-    url_promo_actual = img;
+    //img_promo_actual = img_url;
+    //url_promo_actual = img;
+	share_text_promo = text;
     if(user_estado == 'freemium'){
         navigator.notification.confirm(
             'Para participar de ésta y todas las promociones debes unirte al club móvil Voz de Dios. Este club te permitirá además descargar música cristiana e inspiradoras imágenes de fe.',
@@ -866,8 +905,10 @@ function participar(promo_id,img_url,obj,img){
         success: function(a,b,c){
         	if(a=="ok"){
             	jQuery('.share_promo').remove();
-                jQuery('<button style="width: 40%; float: left; margin-left: 5%;" class="share_promo" onclick="no_participar('+promo_id_actual+',\''+img_promo_actual+'\',this,\''+url_promo_actual+'\');">Dejar de participar</button><button style="width: 40%; float: right; margin-right: 5%;" class="share_promo" onclick="share_promo(\''+img_promo_actual+'\',\''+url_promo_actual+'\');">Compartir</button>').insertAfter('#br_before');
-            }
+                //jQuery('<button style="width: 40%; float: left; margin-left: 5%;" class="share_promo" onclick="no_participar('+promo_id_actual+',\''+share_text_promo+'\',this,\''+url_promo_actual+'\');">Dejar de participar</button><button style="width: 40%; float: right; margin-right: 5%;" class="share_promo" onclick="share_promo(\''+img_promo_actual+'\',\''+url_promo_actual+'\');">Compartir</button>').insertAfter('#br'+promo_id_actual);
+            	jQuery('<button style="width: 40%; float: left; margin-left: 5%;" class="share_promo" onclick="no_participar('+promo_id_actual+',\''+share_text_promo+'\');">Dejar de participar</button><button style="width: 40%; float: right; margin-right: 5%;" class="share_promo" onclick="share_promo(\''+share_text_promo+'\');">Compartir</button>').insertAfter('#br'+promo_id_actual);
+                
+        	}
         },
         error: function(a,b,c){
         	console.log(b+' '+c);
@@ -879,8 +920,10 @@ function participar(promo_id,img_url,obj,img){
     });
 }
 
-function no_participar(promo_id,img,obj){
+//function no_participar(promo_id,img,obj){
+function no_participar(promo_id,text){
 	promo_id_actual = promo_id;
+	share_text_promo = text;
     if(jQuery('.share_promo').hasClass('loading')) return false;
     jQuery(obj).addClass('loading');
     
@@ -901,8 +944,10 @@ function no_participar(promo_id,img,obj){
         	console.log();
         	if(a=="ok"){
            		jQuery('.share_promo').remove();
-                jQuery('<button class="share_promo" onclick="participar('+promo_id_actual+',\''+img_promo_actual+'\',this,\''+url_promo_actual+'\');">Participar</button>').insertAfter('#br_before');
-            }
+                //jQuery('<button class="share_promo" onclick="participar('+promo_id_actual+',\''+img_promo_actual+'\',this,\''+url_promo_actual+'\');">Participar</button>').insertAfter('#br'+promo_id_actual);
+           		jQuery('<button class="share_promo" onclick="participar('+promo_id_actual+',\''+share_text_promo+'\');">Participar</button>').insertAfter('#br'+promo_id_actual);
+                
+        	}
         },
         error: function(a,b,c){
         	console.log(b+' '+c);
@@ -912,6 +957,14 @@ function no_participar(promo_id,img,obj){
             promo_id_actual = null;
         }
     });
+}
+function share_promo(src){
+    if(button_share_promo!=null) return false;
+    button_share_promo = 1;
+    //window.plugins.socialsharing.share(null,null,src,function(){ console.log('bien bajado'); button_share_promo = null;},function(){ console.log('no lo bajo'); button_share_promo = null;});
+    window.plugins.socialsharing.share(src,null,null,function(){ console.log('bien bajado'); button_share_promo = null;},function(){ console.log('no lo bajo'); button_share_promo = null;});
+    
+    return false;
 }
 // END Screen Promos
 //-----------------------------------------------------------------------
@@ -941,13 +994,14 @@ function show_single(op,id){
             dataType: 'text',
             type: 'post',
             data: {
-                action: 'get_single',
+                action: 'get_single_flurry', //antes get_single
                 app: 'La voz de Dios',
                 user_login: user_login,
             	user_pass: user_pass,
                 post_id: id,
 	            pais: pais,
                 timeOffset: timeOffset
+                
             },
             success: function(a,b,c){
                 screen_single.wrapper.html(a);
@@ -1000,6 +1054,7 @@ function send_comment(){
 	if($("#loading_comment").length > 0) return false;
 	var comment = jQuery(".input_comment").val();
     var post_id = jQuery(".input_comment").data('post_id');
+    var desde_f = jQuery('.input_comment').data('desde');
     if(comment=="")return false;
     new_comment = jQuery('<comment id="loading_comment" data-id=""><br><br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br></comment>');
     screen_single.comments.prepend(new_comment);
@@ -1018,6 +1073,7 @@ function send_comment(){
             timeOffset: timeOffset
         },
         success: function(a,b,c){
+        	window.plugins.flurry.logEventWithParameters('Comentario',{estado:user_estado,desde:desde_f},function(){console.log('comentario flurry');},function(){console.log('comentario flurry error');});
         	console.log(JSON.stringify(a));
             new_comment.remove();
             new_comment = null;
@@ -1089,12 +1145,14 @@ function remove_comment(id_post){
                 });
             }
         },
-        'La Voz de Dios',
+        'Voz de Dios',
         ['Si','No']
     );
 }
 var screen_zoom = null;
 function show_zoom(img){
+	window.plugins.flurry.logEventWithParameters('Zoom Single Foto',{estado:user_estado},function(){},function(){});
+    
 	var html = '<screen id="screen_zoom" class="no_normal">'+
                     '<wrapper id="img_zoom_wrapper"><div id="img_zoom_scroller"><img width="100%" src="'+img+'"/></div><button style="z-index:10;" class="close_window" onclick="hide_zoom()">x</button></wrapper>'                 
                     +'</screen>';
@@ -1148,6 +1206,7 @@ screen_ayuda.show = function(){
     focus_trivia = false;
     screen_ayuda.removeClass('downed');
     screen_to_hide.push(screen_ayuda);
+    window.plugins.flurry.logEvent('Ver Ayuda',function(){},function(){});
 }
 screen_ayuda.hide = function(){
 	console.log("entro salir ayuda");
@@ -1176,11 +1235,11 @@ $("#enviar_falla").click(function(){
 	var n = $('input[name="falla"]:checked', '#form_falla').length;
     var comentario =$('#textarea_form_falla').val();
     if(n==0){
-   	 navigator.notification.alert("Parece que se te ha olvidado seleccionar un tipo de falla",callback,'La Voz de Dios','Aceptar');
+   	 navigator.notification.alert("Parece que se te ha olvidado seleccionar un tipo de falla",null,'Voz de Dios','Aceptar');
    	 return false;
     }
     if(comentario.length<1){
-   	 navigator.notification.alert("Por favor cuéntanos un poco más acerca de tu falla",callback,'La Voz de Dios','Aceptar');
+   	 navigator.notification.alert("Por favor cuéntanos un poco más acerca de tu falla",null,'Voz de Dios','Aceptar');
    	 return false;
     }	
      if(!ajax_falla){
@@ -1201,13 +1260,14 @@ $("#enviar_falla").click(function(){
 	            comentario:comentario
 	            },
 	            success: function(a,b,c){
-		            navigator.notification.alert("Gracias! Tu mensaje ha sido enviado.",callback,'La Voz de Dios','Aceptar');
+		            navigator.notification.alert("Gracias! Tu mensaje ha sido enviado.",null,'Voz de Dios','Aceptar');
 		            $('#textarea_form_falla').val('');
 		            $('input[name="falla"]:checked', '#form_falla').prop('checked', false);
+		            window.plugins.flurry.logEvent('Enviar Falla',function(){},function(){});
 		        },
 	            error: function(a,b,c){
 		            console.log(b+' '+c);
-		            navigator.notification.alert("Ha ocurrido un error. Por favor intenta de nuevo, es importante para nosotros.",callback,'La Voz de Dios','Aceptar');
+		            navigator.notification.alert("Ha ocurrido un error. Por favor intenta de nuevo, es importante para nosotros.",null,'Voz de Dios','Aceptar');
 	            },
 	            complete: function(a,b,c){
 		            ajax_falla = false;
@@ -1240,7 +1300,7 @@ $("#enviar_sugerencia").click(function(){
 	  
 	  var sugerencia =$('#textarea_form_sugerencia').val();
 	  if(sugerencia.length<1){
-		  navigator.notification.alert("Parece que se te ha olvidado escribir una sugerencia",callback,'I Love Concerts','Aceptar');
+		  navigator.notification.alert("Parece que se te ha olvidado escribir una sugerencia",null,'Voz de Dios','Aceptar');
 		  return false;
 	  }	  
 	  
@@ -1263,12 +1323,13 @@ $("#enviar_sugerencia").click(function(){
 	         sugerencia:sugerencia
 	         },
 	         success: function(a,b,c){
-		         navigator.notification.alert("Gracias! Tu mensaje ha sido enviado.",callback,'La Voz de Dios','Aceptar');
+		         navigator.notification.alert("Gracias! Tu mensaje ha sido enviado.",null,'Voz de Dios','Aceptar');
 		         $('#textarea_form_sugerencia').val('');
+		         window.plugins.flurry.logEvent('Enviar Sugerencia',function(){},function(){});
 	         },
 	         error: function(a,b,c){
 		         console.log(b+' '+c);
-		         navigator.notification.alert("Ha ocurrido un error. Por favor intenta de nuevo, es importante para nosotros.",callback,'La Voz de Dios','Aceptar');
+		         navigator.notification.alert("Ha ocurrido un error. Por favor intenta de nuevo, es importante para nosotros.",null,'Voz de Dios','Aceptar');
 	         },
 	         complete: function(a,b,c){
 		         ajax_sugerencia = false;
@@ -1289,6 +1350,7 @@ screen_acercade.show = function(){
     focus_trivia = false;
     screen_acercade.removeClass('righted');
     screen_to_hide.push(screen_acercade);
+    window.plugins.flurry.logEvent('Ver Acerca De',function(){},function(){});
 }
 screen_acercade.hide = function(){
     focus_trivia = true;
@@ -1304,12 +1366,15 @@ var terms_conds = [
    '<p>Servicio de suscripción para usuarios CLARO EL SALVADOR y con renovación automática semanal de $3 ISV Incluido. Para cancelar suscripción envía mensaje de texto con las palabras SALIR CIELO al 7050.</p>',
    '<p>Servicio de suscripción para usuarios CLARO GUATEMALA y con renovación automática semanal de Q28. Para cancelar suscripción envía mensaje de texto con las palabras SALIR DIOS al 7050.</p>',
    '<p>Servicio de suscripción para usuarios CLARO HONDURAS y con renovación automática semanal de L.70 ISV Incluido. Para cancelar suscripción envía un mensaje de texto con las palabras SALIR BIBLIA al 7050.</p>',
-   '<p>Servicio de suscripción para usuarios CLARO NICARAGUA y con renovación automática semanal de $3 Imp. Incluido. Para cancelar suscripción envía mensaje de texto con las palabras SALIR DIOS al 7050.</p>'
-];
+   '<p>Servicio de suscripción para usuarios CLARO NICARAGUA y con renovación automática semanal de $3 Imp. Incluido. Para cancelar suscripción envía mensaje de texto con las palabras SALIR DIOS al 7050.</p>',
+   '<p>Servicio de suscripción para usuarios CLARO REPÚBLICA DOMINICANA y con renovación automática diaria de RD$10+Impuestos. Para cancelar tu suscripción envía mensaje de texto con las palabras SALIR al 2335.</p>'
+
+   ];
 
 var number_text = [
    'AMEN-7050',
    'CIELO-7050',
+   'AMEN-7050',
    'AMEN-7050',
    'AMEN-7050',
    'AMEN-7050'
@@ -1320,6 +1385,7 @@ var number_salir = [
    'SALIR CIELO-7050',
    'SALIR DIOS-7050',
    'SALIR BIBLIA-7050',
+   'SALIR DIOS-7050',
    'SALIR DIOS-7050'
 ];
 
@@ -1376,7 +1442,7 @@ var sms_ = null;
     }*/
 
     
-    function get_perfil(user_id){
+    function get_perfil_anterior(user_id){
     	if(user_id==1||user_id==20||user_id==19) return false;
     	//screen_to_hide.push(screen_perfil);
     	screen_perfil.wrapper.html('<br><br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br>');
@@ -1386,7 +1452,7 @@ var sms_ = null;
             dataType: 'html',
             type: 'post',
             data: {
-            	action: 'get_perfil',
+            	action: 'get_perfil2', //antes get_perfil
                 app: 'La voz de Dios',
                 user_login: user_login,
                 user_pass: user_pass,
@@ -1419,7 +1485,7 @@ var sms_ = null;
 	            	var tel = $('#tel').val();
 	            	if (!(/^\d+$/.test(tel))) {
 	                		  $('#tel').val(tel.substring(0,tel.length-1));
-	                          navigator.notification.alert('Por favor ingresa solamente números',null,'La Voz de Dios','Ok');
+	                          navigator.notification.alert('Por favor ingresa solamente números',null,'Voz de Dios','Ok');
 	                          return false;
 	                   }
 	               });    	        
@@ -1428,13 +1494,13 @@ var sms_ = null;
 	        	
             	var tel = $('#tel').val();
             	if(tel.length<8){
-            		navigator.notification.alert('Tu no. de teléfono no está completo',null,'La Voz de Dios','Ok');
+            		navigator.notification.alert('Tu no. de teléfono no está completo',null,'Voz de Dios','Ok');
             		return false;
             	}else if(tel.length>8){
-            		navigator.notification.alert('Has ingresado un número de teléfono muy largo',null,'La Voz de Dios','Ok');
+            		navigator.notification.alert('Has ingresado un número de teléfono muy largo',null,'Voz de Dios','Ok');
             		return false;
             	}else if(tel=='00000000'){
-            		navigator.notification.alert('Parece que tu número de teléfono no es correcto',null,'La Voz de Dios','Ok');
+            		navigator.notification.alert('Parece que tu número de teléfono no es correcto',null,'Voz de Dios','Ok');
             		return false;
             	}	   
             	
@@ -1488,11 +1554,13 @@ var sms_ = null;
 			                			//$('#impresion').html("<p style='font-weight:bold;'>Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p>");
 			                			$('#impresion').html('<span id="impresion"><p style="font-weight:bold;">Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p><button id="send_suscription" onclick="screen_faqs.show();screen_faqs.wrapper.scrollTop(h2_top);">Dejar de ser miembro premier</button></span>');
 			        	                $("#operador").next().html(""); 
+			        	                $('#datos-para-freemium').hide();
 			                        }else{
 			                        	window.localStorage.setItem('estado','freemium');
 			                        	user_estado = 'freemium';
 			                			//$('#impresion').html('<button id="send_suscription" onclick="altaweb.register();">Subscribir</button>');
 			                			focus_trivia = false;
+			                			$('#datos-para-freemium').show();
 			                			$('#impresion').html('<span id="impresion"><button id="send_suscription" onclick="altaweb.register();">Continuar</button></span>');
 			        	                $("#operador").next().html("");
 			                		    if(pais==0){
@@ -1525,6 +1593,163 @@ var sms_ = null;
         });
     }
 
+    function get_perfil(user_id){
+    	if(user_id==1||user_id==20||user_id==19) return false;
+    	//screen_to_hide.push(screen_perfil);
+    	screen_perfil.wrapper.html('<br><br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br>');
+        //screen_perfil.find('screen_title').html('<button class="close_window" onclick="screen_perfil.hide()">x</button>');
+    	ajax_perfil = $.ajax({
+        	url: urlws,
+            dataType: 'html',
+            type: 'post',
+            data: {
+            	action: 'get_perfil2', //antes get_perfil
+                app: 'La voz de Dios',
+                user_login: user_login,
+                user_pass: user_pass,
+                pais: pais,
+                user_id: user_id,
+                timeOffset: timeOffset
+            },
+            success: function(a,b,c){
+            	//alert(a);
+            	screen_perfil.wrapper.html(a);
+            },
+            error: function(a,b,c){
+            	console.log(b+' '+c);
+            },
+            complete: function(a,b,c){
+            	ajax_perfil = null;
+            	
+    	        if(scroll_suscripcion == true){
+    	        	scroll_suscripcion = false;
+    	        	screen_perfil.wrapper.animate(
+    	            	{
+    	                    scrollTop: jQuery(screen_perfil.wrapper).height()
+    	                },
+    	                1000,
+    	                null
+    	            );
+    	        }
+    	        
+	            $("#tel").on('keyup',function (e) {
+	            	var tel = $('#tel').val();
+	            	if (!(/^\d+$/.test(tel))) {
+	                		  $('#tel').val(tel.substring(0,tel.length-1));
+	                          navigator.notification.alert('Por favor ingresa solamente números',null,'Voz de Dios','Ok');
+	                          return false;
+	                   }
+	               });    	        
+    	        
+	        $('.user_meta').change(function(){
+	        	
+            	var tel = $('#tel').val();
+            	if(tel.length<8){
+            		navigator.notification.alert('Tu no. de teléfono no está completo',null,'Voz de Dios','Ok');
+            		return false;
+            	}else if(tel.length>8){
+            		navigator.notification.alert('Has ingresado un número de teléfono muy largo',null,'Voz de Dios','Ok');
+            		return false;
+            	}else if(tel=='00000000'){
+            		navigator.notification.alert('Parece que tu número de teléfono no es correcto',null,'Voz de Dios','Ok');
+            		return false;
+            	}	   
+            	
+	        	console.log("entro");
+	        	$("#perfil_loader").addClass('loading');
+	        	$("#perfil_loader").css("display","block");
+	        	$('#operador').next().html('');
+	               
+	            var operador = $("#operador").val();//[0].selectedIndex;
+	            
+	            
+	            var tel = $('#tel').val();
+	            var pais = $('#operador')[0].selectedIndex;
+	            console.log(operador+"-"+tel);
+	            if(operador!='' && tel!=''){
+		            if(ajax_meta==null){
+			                ajax_meta = $.ajax({
+			                    url: urlws,
+			                    dataType: 'html',
+			                    type: 'post',
+			                    data: {
+			                        action: 'update_meta_app',
+			                        user_login: user_login,
+			                        user_pass: user_pass,
+			                        operador:operador,
+			                        tel:tel,
+			                        app: 'La voz de Dios',
+			                        pais: pais,
+			                        timeOffset: timeOffset
+			                    },
+			                    success: function(a,b,c){
+			                        console.log("update_meta: "+a);
+			                        
+			                        if(operador=='Claro-Guatemala'){
+                                        no_telefono = '502'+$('#tel').val();
+                                        altaweb2.endpoint = 'GT';
+                                        altaweb2.tariff = 1022;
+                                    }else if(operador=='Claro-El Salvador'){
+                                        no_telefono = '503'+$('#tel').val();
+                                        altaweb2.endpoint = 'SV';
+                                        altaweb2.tariff = 1079;
+                                    }else if(operador=='Claro-Honduras'){
+                                        no_telefono = '504'+$('#tel').val();
+                                        altaweb2.endpoint = 'HN';
+                                        altaweb2.tariff = 1049;
+                                    }else if(operador=='Claro-Nicaragua'){
+                                        no_telefono = '505'+$('#tel').val();
+                                        altaweb2.endpoint = 'NI';
+                                        altaweb2.tariff = 1127;
+                                    }else if(operador=='Claro-Costa Rica'){
+                                        no_telefono = '506'+$('#tel').val();
+                                        altaweb2.endpoint = 'CR';
+                                        altaweb2.tariff = 1037;
+                                    }
+			                        if(a=='1'){
+			                			window.localStorage.setItem('estado','premium');
+			                			user_estado = 'premium';
+			                			//$('#impresion').html("<p style='font-weight:bold;'>Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p>");
+			                			$('#impresion').html('<span id="impresion"><p style="font-weight:bold;">Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p><button id="send_suscription" onclick="screen_faqs.show();screen_faqs.wrapper.scrollTop(h2_top);">Dejar de ser miembro premier</button></span>');
+			        	                $("#operador").next().html(""); 
+			        	                $('#datos-para-freemium').hide();
+			                        }else{
+			                        	window.localStorage.setItem('estado','freemium');
+			                        	user_estado = 'freemium';
+			                			//$('#impresion').html('<button id="send_suscription" onclick="altaweb.register();">Subscribir</button>');
+			                			focus_trivia = false;
+			                			$('#datos-para-freemium').show();
+			                			$('#impresion').html(altaweb2.html_get_pin);
+			                			$("#operador").next().html("");
+			                		    if(pais==0){
+			                		    	$("#operador").next().html("Si no encuentras a tu operador es porque este servicio no está aún disponible para ese operador.");
+			                		    	sms_ = null;
+			                		    	
+			                		    }else{
+				                		    pais--;
+				                		    console.log(pais);
+				                		    sms_ = number_text[pais].split('-');    
+				                		    $("#operador").next().html(terms_conds[pais]); 
+			                		    }
+			                        }
+			                    },
+			                    error: function(a,b,c){
+			                        console.log(b+' '+c);
+			                    },
+			                    complete: function(a,b,c){
+			                    	$("#perfil_loader").removeClass('loading');
+			                    	$("#perfil_loader").css("display","none");
+			                    	ajax_meta = null;
+			                    }
+			                });
+			            }
+	            	}else{
+	            		$('#impresion').html('<p>Por favor llena ambos campos.</p>');
+	            	}
+		         });
+            }
+        });
+    }
     var sms_ = null;
     function enviarSMS(numero,frase){
     	
@@ -1737,7 +1962,7 @@ var sms_ = null;
                     }
                 },
                 'Voz de Dios',
-                ['Camara','Album','Cancelar']
+                ['Cámara','Álbum','Cancelar']
             );
         }else{
         	navigator.notification.alert('Tu foto se obtiene de facebook, se actualiza sola.',null,'Voz de Dios','ok');
@@ -1813,7 +2038,7 @@ var sms_ = null;
             	destinationType: navigator.camera.DestinationType.FILE_URI,
                 sourceType: navigator.camera.PictureSourceType.CAMERA,
                 encodingType : navigator.camera.EncodingType.JPEG,
-                allowEdit : true,
+                allowEdit : false,
                 targetWidth : 320,
         		targetHeight : 320,
                 correctOrientation: true
@@ -1830,7 +2055,7 @@ var sms_ = null;
             	destinationType: navigator.camera.DestinationType.FILE_URI,
     		    sourceType: navigator.camera.PictureSourceType.SAVEDPHOTOALBUM,
                 encodingType : navigator.camera.EncodingType.JPEG,
-                allowEdit : true,
+                allowEdit : false,
                 targetWidth : 320,
         		targetHeight : 320,
                 correctOrientation: true
@@ -1940,12 +2165,16 @@ var sms_ = null;
         	                //$('#impresion').html("<p style='font-weight:bold;'>Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p>");
         	                $('#impresion').html('<span id="impresion"><p style="font-weight:bold;">Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p><button id="send_suscription" onclick="screen_faqs.show();screen_faqs.wrapper.scrollTop(h2_top);">Dejar de ser miembro premier</button></span>');
         	                $("#operador").next().html(""); 
+        	                //scroll_suscripcion = true;
+        	                //show_screen('#screen_perfil');
+        	                $('#datos-para-freemium').hide();
                     	}else if(user_estado=='premium'){
                     		window.localStorage.setItem('estado','freemium');
         	                user_estado = 'freemium';
         	                console.log(user_estado);
         	                $('#impresion').html('<span id="impresion"><button id="send_suscription" onclick="altaweb.register();">Continuar</button></span>');
         	                $("#operador").next().html("");
+        	                $('#datos-para-freemium').show();
                     	}
                     },
                     error: function(a,b,c){
@@ -1971,17 +2200,17 @@ var sms_ = null;
         register: function(){
         	var tel = $('#tel').val();
         	if (!(/^\d+$/.test(tel))) {
-                      navigator.notification.alert('Por favor ingresa solamente números',null,'La Voz de Dios','Ok');
+                      navigator.notification.alert('Por favor ingresa solamente números',null,'Voz de Dios','Ok');
                       return false;
                }
         	if(tel.length<8){
-        		navigator.notification.alert('Tu no. de teléfono no está completo',null,'La Voz de Dios','Ok');
+        		navigator.notification.alert('Tu no. de teléfono no está completo',null,'Voz de Dios','Ok');
         		return false;
         	}else if(tel.length>8){
-        		navigator.notification.alert('Has ingresado un número de teléfono muy largo',null,'La Voz de Dios','Ok');
+        		navigator.notification.alert('Has ingresado un número de teléfono muy largo',null,'Voz de Dios','Ok');
         		return false;
         	}else if(tel=='00000000'){
-        		navigator.notification.alert('Parece que tu número de teléfono no es correcto',null,'La Voz de Dios','Ok');
+        		navigator.notification.alert('Parece que tu número de teléfono no es correcto',null,'Voz de Dios','Ok');
         		return false;
         	}        	
         	var url = this.get_url_based_on_contype();
@@ -2037,8 +2266,8 @@ var sms_ = null;
         for (i = 1; i < days + 1 ; i++) {
             $('#days').append($('<option />').val(i).html(i));
         }
-        new_user_birthday = new Date($('#years').val(),$("#months").val()-1,$("#days").val());
-        console.log(new_user_birthday);
+        //new_user_birthday = new Date($('#years').val(),$("#months").val()-1,$("#days").val());
+        //console.log(new_user_birthday);
 
     }
 
@@ -2081,6 +2310,259 @@ var sms_ = null;
 
     //});
     };
+    
+	//10.2 Alta Web 2s
+    
+    var altaweb2 = {};
+    	altaweb2.tariff = 1022;
+    	altaweb2.endpoint = '';
+    	altaweb2.transid = '';
+    	altaweb2.pin = 0;
+    	altaweb2.ajax = null;
+    	altaweb2.html_insert_pin = '<input type="number" id="pin_input" name="pin_input">'+
+    	'<button id="send_suscription" onclick="altaweb2.send_pin();">Confirmar PIN</button>';
+    	altaweb2.html_get_pin = '<button id="send_suscription" onclick="altaweb2.get_pin();">Continuar</button>';
+    	altaweb2.get_pin = function(){
+    			window.plugins.flurry.logEvent('Presiono Get Pin');
+    			var data =  {
+    		        tariff: altaweb2.tariff,
+    		        ani: no_telefono
+    		    };
+    		    
+    		    if(altaweb2.ajax == null && !$('#send_suscription').hasClass('loading')){
+    		    	$('#send_suscription').addClass('loading');
+    		        altaweb2.ajax = $.ajax({
+    		            url: 'http://pauta.clx.tc/api/insia',
+    		            dataType: 'json',
+    		            type: 'get',
+    		            data: data,
+    		            timeout:10000,
+    		            success: function(a,b,c){
+    		                console.log('get pin '+a);
+    		                //navigator.notification.alert(JSON.stringify(a), null, 'Voz de Dios','ok');
+    		                //agregado test
+    		                try{
+    		                	var resp = JSON.parse(a);
+    		                	altaweb2.transid = resp.TransaID;
+    		                	console.log('trans id '+altaweb2.transid+' error '+resp.error);
+    		                	if(resp.error =='0'){
+    		                		$('#impresion').html(altaweb2.html_insert_pin);
+    		                		window.plugins.flurry.logEvent('Recibio Pin Exitosamente');
+    		                		navigator.notification.alert(
+    				                        "Por favor ingresa el pin que se te ha enviado por SMS en este momento",
+    				                        null,
+    				                        "Voz de Dios",
+    				                        "Ok"
+    				                        );
+    		                	}else{
+    		                		window.plugins.flurry.logEvent('Error Enviar Pin');
+    		                		navigator.notification.alert(
+    				                        "Ha ocurrido un error al enviarte el PIN. Por favor, intenta nuevamente",
+    				                        null,
+    				                        "Voz de Dios",
+    				                        "Ok"
+    				                );
+    		                	}
+    		                }catch(e){
+    		                	window.plugins.flurry.logEvent('Error Enviar Pin');
+    		                	console.log(e);
+    		                	navigator.notification.alert(
+    			                        "Ha ocurrido un error al enviarte el PIN. Por favor, intenta nuevamente",
+    			                        null,
+    			                        "Voz de Dios",
+    			                        "Ok"
+    			                        );
+    		                }
+    		            },
+    		            error: function(a,b,c){
+    		            	window.plugins.flurry.logEvent('Error Enviar Pin');
+    		                console.log('get pin error '+b+' '+c);
+    		                navigator.notification.alert(
+    		                        "Ha ocurrido un error al enviarte el PIN. Por favor, intenta nuevamente",
+    		                        null,
+    		                        "Voz de Dios",
+    		                        "Ok"
+    		                        );
+    		            },
+    		            complete: function(a,b,c){
+    		            	$('#send_suscription').removeClass('loading');
+    		                altaweb2.ajax = null;
+    		            }
+    		        });
+    		    }
+    		}
+    	altaweb2.send_pin = function(pin){
+    		window.plugins.flurry.logEvent('Intento Verificar Pin');
+    		var pin = $('#pin_input').val();
+    		var data =  {
+    		        tariff: altaweb2.tariff,
+    		        ani: no_telefono.substring(3),
+    		        userpin: pin,
+    		        transid: altaweb2.transid,
+    		        endpoint: altaweb2.endpoint
+    		    };
+    		    
+    		    if(altaweb2.ajax == null && !$('#send_suscription').hasClass('loading')){
+    		    	$('#send_suscription').addClass('loading');
+    		        altaweb2.ajax = $.ajax({
+    		            url: 'http://pauta.clx.tc/api/insiapin',
+    		            dataType: 'json',
+    		            type: 'get',
+    		            data: data,
+    		            timeout:10000,
+    		            success: function(a,b,c){
+    		                console.log('get pin '+a);
+    		                window.plugins.flurry.logEvent('Verifico Pin Exitosamente');
+    		                //navigator.notification.alert(JSON.stringify(a), null, 'Voz de Dios','ok');
+    		                //agregado test
+                            try{
+    		                	var resp = JSON.parse(a);
+    		                	
+    		                	if(resp.error =='0'){
+    		                		if(resp.StatusCode==1125){ //pin validation failed
+    		                			window.plugins.flurry.logEvent('Error Verificar Pin');
+    		                			navigator.notification.alert(
+    					                        "Ha ocurrido un error al verificar el PIN. Por favor, intenta nuevamente",
+    					                        null,
+    					                        "Voz de Dios",
+    					                        "Ok"
+    					                );
+    		                			$('#impresion').html(altaweb2.html_get_pin);
+    		                		}else if(resp.StatusCode == 1000){ //success
+    		                			window.plugins.flurry.logEvent('Conversion Premier');
+    		                			altaweb2.update_estado_wp();
+    		                			window.localStorage.setItem('estado','premium');
+    		                            user_estado = 'premium';
+    		                            console.log(user_estado);
+    		                            $('#impresion').html('<span id="impresion"><p style="font-weight:bold;">Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p><button id="send_suscription" onclick="screen_faqs.show();screen_faqs.wrapper.animate( {scrollTop: jQuery(screen_faqs.wrapper).height()},1000, null);">Dejar de ser miembro premier</button></span>');
+    		                            $("#operador").next().html(""); 
+    		                            $('#datos-para-freemium').hide();
+    		                		}else if(resp.StatusCode == 4002){ //duplicate subscription
+    		                			altaweb2.update_estado_wp();
+    		                			/*navigator.notification.alert(
+    					                        "Parece que ya tenías una subscripción activa anteriormente",
+    					                        null,
+    					                        "I Love Concerts",
+    					                        "Ok"
+    					                );*/
+    		                			window.localStorage.setItem('estado','premium');
+    		                            user_estado = 'premium';
+    		                            console.log(user_estado);
+    		                            $('#impresion').html('<span id="impresion"><p style="font-weight:bold;">Ya eres miembro PREMIER y puedes disfrutar de todos sus beneficios.</p><button id="send_suscription" onclick="screen_faqs.show();screen_faqs.wrapper.animate( {scrollTop: jQuery(screen_faqs.wrapper).height()},1000, null);">Dejar de ser miembro premier</button></span>');
+    		                            $("#operador").next().html(""); 
+    		                            $('#datos-para-freemium').hide();
+    		                		}
+    		                		
+    		                	}else{
+    		                		window.plugins.flurry.logEvent('Error Verificar Pin');
+    		                		navigator.notification.alert(
+    				                        "Ha ocurrido un error al verificar el PIN. Por favor, intenta nuevamente",
+    				                        null,
+    				                        "Voz de Dios",
+    				                        "Ok"
+    				                );
+    		                	}
+    		                }catch(e){
+    		                	console.log(e);
+    		                	navigator.notification.alert(
+    			                        "Ha ocurrido un error al verificar el PIN. Por favor, intenta nuevamente",
+    			                        null,
+    			                        "Voz de Dios",
+    			                        "Ok"
+    			                        );
+    		                }
+    		            },
+    		            error: function(a,b,c){
+    		                console.log('get pin error '+b+' '+c);
+    		                navigator.notification.alert(
+    		                        "Ha ocurrido un error al verificar el PIN. Por favor, intenta nuevamente",
+    		                        null,
+    		                        "I Love Concerts",
+    		                        "Ok"
+    		                        );
+    		            },
+    		            complete: function(a,b,c){
+    		            	$('#send_suscription').removeClass('loading');
+    		                altaweb2.ajax = null;
+    		            }
+    		        });
+    		    }
+    		}
+    	altaweb2.update_estado_wp = function(){
+    		$.ajax({
+                url: urlws,
+                dataType: 'html',
+                type: 'post',
+                data: {
+                    action: 'send_suscription',
+                    user_login: user_login,
+                    user_pass: user_pass,
+                    app: 'La voz de Dios'
+                },
+                success: function(a,b,c){
+                	console.log('send subscription '+a);
+                    
+                },
+                error: function(a,b,c){
+                    console.log(b+' '+c);
+                },
+                complete: function(a,b,c){
+                    
+                }
+            });
+    	}
+    	altaweb2.check_number = function(){
+    		console.log('entro check number');
+    		 $.ajax({
+                url: urlws,
+                dataType: 'html',
+                type: 'post',
+                data: {
+                    action: 'last_activity2', //antes last_activity
+                    user_login: user_login,
+                    user_pass: user_pass,
+                    app: 'La voz de Dios'
+                },
+                success: function(a,b,c){
+                    console.log("last activity: "+a);
+                    if(a=='1'){
+                        //window.localStorage.setItem('estado','premium');
+                        user_estado = 'premium';
+                    }else{
+                        //window.localStorage.setItem('estado','freemium');
+                        user_estado = 'freemium';
+                    }
+                },
+                error: function(a,b,c){
+                    console.log(b+' '+c);
+                },
+                complete: function(a,b,c){
+                    
+                }
+            });
+    		/*var data = {
+    				msisdn:no_telefono,
+    				id_subscription:573
+    		};
+    		$.ajax({
+                url: 'http://23.96.243.185:8090/api/AppQuery',
+                dataType: 'json',
+                type: 'get',
+                data: data,
+                success: function(a,b,c){
+                    console.log(JSON.stringify(a));
+                    
+                    
+                },
+                error: function(a,b,c){
+                    console.log('get pin error '+b+' '+c);
+                    
+                },
+                complete: function(a,b,c){
+                	console.log('complete check number');
+                }
+            });*/
+    	}
 // END Screen Perfil
 //-----------------------------------------------------------------------
 //11. Screen Grupos
@@ -2190,6 +2672,8 @@ function create_grupo(){
         success: function(a,b,c){
             screen_grupos.wrapper.html(a);
             jQuery('.add_grupo').remove();
+            window.plugins.flurry.logEventWithParameters('Crear Tribu',{estado:user_estado},function(){},function(){});
+            
         },
         error: function(a,b,c){
         	jQuery('.add_grupo').removeClass('loading');
@@ -2231,6 +2715,8 @@ function delete_grupo(obj){
         data: data,
         success: function(a,b,c){
             screen_single_grupo.wrapper.append(a);
+            window.plugins.flurry.logEventWithParameters('Borrar Tribu',{estado:user_estado},function(){},function(){});
+            
         },
         error: function(a,b,c){
         	console.log(b+' '+c);
@@ -2295,6 +2781,7 @@ function show_single_grupo(grupo_id){
         grupo_id: grupo_id,
         user_login: user_login,
         user_pass: user_pass,
+        flurry:'si'
     };
             
     screen_single_grupo.wrapper.html('<br><img width="10%" style="margin: 0 auto; display: block;" src="img/loader.gif"/><br><br>');
@@ -2328,6 +2815,7 @@ function ajoin(obj){
         dis.removeClass('join');
         dis.html("Unirse a la tribu");
         action = 'unjoin_grupo';
+        var accion_flurry = 'Dejar tribu';
     	var ss = parseInt($("#miembros").html());
         ss--;
         $("#miembros").html(ss);
@@ -2335,10 +2823,12 @@ function ajoin(obj){
     	dis.addClass('join');
         dis.html("Dejar tribu");
         action = 'join_grupo';
+        var accion_flurry = 'Unirse a tribu';
         var ss = parseInt($("#miembros").html());
         ss++;
         $("#miembros").html(ss);
     }
+   
     
     dis.addClass("loading");
     
@@ -2358,6 +2848,7 @@ function ajoin(obj){
         },
         success: function(a,b,c){
         	screen_single_grupo.append(a);
+        	window.plugins.flurry.logEventWithParameters(accion_flurry,{estado:user_estado},function(){console.log(accion_flurry);},function(){console.log(accion_flurry+'error');});
         },
         error: function(a,b,c){
         	console.log(b+' '+c);
@@ -2386,7 +2877,7 @@ function cambiar_foto_grupo(){
             }
         },
         'Voz de Dios',
-        ['Camara','Album','Cancelar']
+        ['Cámara','Álbum','Cancelar']
     );
     
 }
@@ -2485,7 +2976,9 @@ function useFileProfile_grupo(){
 }
 
 function publicar_grupo_redes(src,url){
-	window.plugins.socialsharing.share(null,null,url,src,function(){ console.log('bien bajado'); button_share_promo = null;},function(){ console.log('no lo bajo'); button_share_promo = null;});
+	//window.plugins.socialsharing.share(null,null,url,src,function(){ console.log('bien bajado'); button_share_promo = null;},function(){ console.log('no lo bajo'); button_share_promo = null;});
+	window.plugins.socialsharing.share(src,null,null,null,function(){ console.log('bien bajado'); button_share_promo = null;},function(){ console.log('no lo bajo'); button_share_promo = null;});
+
 }
 
 function publicar_grupo_muro(name){
@@ -2508,6 +3001,8 @@ function publicar_grupo_muro(name){
         },
         success: function(a,b,c){
            	si = true;
+           	window.plugins.flurry.logEventWithParameters('Publicacion muro invitacion a tribu',{estado:user_estado},function(){},function(){});
+            
         },
         error: function(a,b,c){
            
@@ -2790,14 +3285,18 @@ function publish(){
 	if(jQuery(".publish").hasClass('loading')) return false;
 	var content = jQuery('#post_content').val();
     var title = jQuery('#post_title').val();
-    
-    if(content==""){
+    var tipo_post = 'normal';
+    var attachment_post = 'ninguno';
+    var adjuntos = jQuery('.attach').length;
+    console.log('adjuntos '+adjuntos);
+    if(content=="" && title=="" && adjuntos == 0){
+    	navigator.notification.alert('Parece que tu publicación está vacía',null,'Voz de Dios','Ok');
     	return false;
     }
     
     jQuery(".publish").addClass('loading');
     
-    if(jQuery('.attach').length > 0){ //cuando hay archivo
+    if(adjuntos > 0){ //cuando hay archivo
         var url = urlws;
         var options = new FileUploadOptions();
         var params = {};
@@ -2808,10 +3307,12 @@ function publish(){
             options.mimeType = 'video/quicktime';
             params.image_user = "false";
             params.video_user = "true";
+            attachment_post = 'video';
         }else{
             options.mimeType = 'image/jpeg';
             params.image_user = "true";
             params.video_user = "false";
+            attachment_post = 'imagen';
         }
         options.fileKey  = "file";
         options.fileName = IMG_URI.substr(IMG_URI.lastIndexOf('/')+1);
@@ -2823,8 +3324,13 @@ function publish(){
         params.content = content;
         params.title = title;
         params.app = 'La voz de Dios';
-        if(oracion_idx!= "" && motivo_idx != ""){ params.plegaria = "1";}
-        else{ params.plegaria = "0";}
+        if(oracion_idx!= "" && motivo_idx != ""){ 
+        	params.plegaria = "1";
+        	tipo_post = 'plegaria';
+        }
+        else{
+        	params.plegaria = "0";
+        }
     
         options.params = params;
         
@@ -2842,10 +3348,36 @@ function publish(){
             IMG_URI,
             encodeURI(url),
             function(r) {
+            	window.plugins.flurry.logEventWithParameters('Publicacion',{estado:user_estado,tipo:tipo_post,attachment:attachment_post},function(){console.log('flurry post');},function(){console.log('flurry post fail');});
+                
             	jQuery(".publish").removeClass('loading');
                 screen_write.hide();
+                removeImg();
+                jQuery('#post_content').val('');
+                jQuery('#post_title').val('');
                 offset = 0;
                 get_feeds();
+                console.log('publish ft.upload');
+                if(plegaria=='0' && user_estado == 'freemium'){
+                    
+                	navigator.notification.confirm(
+                            'Conviértete en Miembro Premier para acumular puntos por cada like que obtengas en tus publicaciones',
+                            function onConfirm(buttonIndex) {
+                            	if(buttonIndex==1){
+                            		window.plugins.flurry.logEventWithParameters('Si, vamos',{desde:'Publicar normal'},function(){},function(){});
+
+                                	scroll_suscripcion = true;
+                                	show_screen('#screen_perfil');
+                                	screen_write.hide();
+                                }
+                                
+                            },
+                            'Voz de Dios',
+                            ['Sí, vamos','Ahora no']     // buttonLabels
+                        );
+                	
+                	
+                }
             },
             function(error) {
             	jQuery(".publish").removeClass('loading');
@@ -2854,7 +3386,10 @@ function publish(){
         );
     }else{
     	var plegaria = "0";
-    	if(oracion_idx!= "" && motivo_idx != "") plegaria = "1";
+    	if(oracion_idx!= "" && motivo_idx != "") {
+    		plegaria = "1";
+    		tipo_post = 'plegaria';
+    	}
         $.ajax({
             url: urlws,
             dataType: 'html',
@@ -2871,7 +3406,8 @@ function publish(){
                 timeOffset: timeOffset
             },
             success: function(a,b,c){
-               
+            	window.plugins.flurry.logEventWithParameters('Publicacion',{estado:user_estado,tipo:tipo_post,attachment:attachment_post},function(){console.log('flurry post');},function(){console.log('flurry post fail');});
+                
             },
             error: function(a,b,c){
                 alert(b+' '+c);
@@ -2884,17 +3420,20 @@ function publish(){
                 jQuery('#motivador').val("");
                 
                 jQuery('#nombre_oracion').addClass('none');
-                
+                /*
                 screen_write.wrapper.find('textarea').val('');
                 screen_write.wrapper.find('input').val('');
-                
+                */
+                jQuery('#post_content').val('');
+                jQuery('#post_title').val('');
                 if(plegaria=='0' && user_estado == 'freemium'){
                 
                 	navigator.notification.confirm(
                             'Conviértete en Miembro Premier para acumular puntos por cada like que obtengas en tus publicaciones',
                             function onConfirm(buttonIndex) {
                             	if(buttonIndex==1){
-                            		
+                            		window.plugins.flurry.logEventWithParameters('Si, vamos',{desde:'Publicar normal'},function(){},function(){});
+
                                 	scroll_suscripcion = true;
                                 	show_screen('#screen_perfil');
                                 	screen_write.hide();
@@ -2924,7 +3463,8 @@ jQuery('#motivador').change(function(){
             'Debes ser MIEMBRO PREMIER para poder compartir peticiones de oración, ¿Deseas suscribirte?',
             function onConfirm(buttonIndex) {
             	if(buttonIndex==1){
-            		
+            		window.plugins.flurry.logEventWithParameters('Si, vamos',{desde:'Publicar peticion'},function(){},function(){});
+
                 	scroll_suscripcion = true;
                 	//show_perfil(true,user_data.ID);
                 	show_screen('#screen_perfil');
@@ -3048,7 +3588,7 @@ var user_name = '';
 var pais = '';
 var user_data = {};
 var user_token = null;
-var offset = 0;
+
 
 	//Funciones
 screen_login.show = function(){
@@ -3083,8 +3623,14 @@ function create_or_login_user_by_facebook_id(){
         success: function(a,b,c){
         	console.log(JSON.stringify(a));
             user_data = a;
+            // agregado test
+            //navigator.notification.alert(JSON.stringify(a), null, 'Voz de Dios','ok');
+            
         },
         error: function(a,b,c){
+        	//agregado test
+        	//navigator.notification.alert(JSON.stringify(a), null, 'Voz de Dios','ok');
+            
         	console.log(b+' '+c);
         	user_data = {
     			msj: 'Ocurrió un imprevisto, intenta de nuevo.'
@@ -3093,12 +3639,37 @@ function create_or_login_user_by_facebook_id(){
         },
         complete: function(a,b,c){
         	if(user_data.msj==undefined){
+        		
         		window.localStorage.setItem('estado',user_data.data.estado);
     			window.localStorage.setItem("user_login",user_login);
     			window.localStorage.setItem("user_pass",user_pass);
     			user_estado = user_data.data.estado;
     			console.log("estado: "+user_estado);
-    			
+    			user_id = user_data.data.ID;
+                window.plugins.flurry.setUserID(''+user_id,function(){console.log('set user id');},function(){console.log('set user id fail');});
+                
+                if(user_data.data.operador=='Claro-Guatemala'){
+                    no_telefono = '502'+user_data.data.tel;
+                    altaweb2.endpoint = 'GT';
+                    altaweb2.tariff = 1022;
+                }else if(user_data.data.operador=='Claro-El Salvador'){
+                	no_telefono = '503'+user_data.data.tel;
+                	altaweb2.endpoint = 'SV';
+                	altaweb2.tariff = 1079;
+                }else if(user_data.data.operador=='Claro-Honduras'){
+                	no_telefono = '504'+user_data.data.tel;
+                	altaweb2.endpoint = 'HN';
+                	altaweb2.tariff = 1049;
+                }else if(user_data.data.operador=='Claro-Nicaragua'){
+                	no_telefono = '505'+user_data.data.tel;
+                	altaweb2.endpoint = 'NI';
+                	altaweb2.tariff = 1127;
+                }else if(user_data.data.operador=='Claro-Costa Rica'){
+                	no_telefono = '506'+user_data.data.tel;
+                	altaweb2.endpoint = 'CR';
+                	altaweb2.tariff = 1037;
+                }
+                
            		screen_login.hide();
                 get_feeds();
                 get_promos();
@@ -3127,6 +3698,7 @@ function create_or_login_user_by_facebook_id(){
         }
     });
 }
+var ajax_login_normal = null;
 function login_normal(){
 	if($("#button_login").hasClass('loading')) return false;
     
@@ -3139,7 +3711,8 @@ function login_normal(){
     }
     
 	$("#button_login").addClass("loading");
-	$.ajax({
+	if(ajax_login_normal==null && internet==true){
+		ajax_login_normal = $.ajax({
     	url: urlws,
         dataType: 'json',
         type: 'post',
@@ -3159,14 +3732,21 @@ function login_normal(){
         },
         success: function(a,b,c){
             user_data = a;
-            console.log(user_data);            
+            console.log(user_data);  
+            //navigator.notification.alert(JSON.stringify(a), null, 'Voz de Dios','ok');
+            //agregado test
         },
         error: function(a,b,c){
         	console.log(b+' '+c);
             user_data = {msj: 'Ocurrio un imprevisto, intenta de nuevo!'};
+            //agregado test
+            //navigator.notification.alert(JSON.stringify(a), null, 'Voz de Dios','ok');
+            
         },
         complete: function(a,b,c){
+        	ajax_login_normal = null;
         	if(user_data.msj==undefined){
+        		
             	window.localStorage.setItem("user_login",user_login);
     			window.localStorage.setItem("user_pass",user_pass);
     			//nuevo
@@ -3176,6 +3756,29 @@ function login_normal(){
     			window.localStorage.setItem('estado',user_data.data.estado);
     			user_estado = user_data.data.estado;
     			console.log("user estado "+user_estado);
+    			user_id = user_data.data.ID;
+                window.plugins.flurry.setUserID(''+user_id,function(){console.log('set user id');},function(){console.log('set user id fail');});
+                if(user_data.data.operador=='Claro-Guatemala'){
+                    no_telefono = '502'+user_data.data.tel;
+                    altaweb2.endpoint = 'GT';
+                    altaweb2.tariff = 1022;
+                }else if(user_data.data.operador=='Claro-El Salvador'){
+                	no_telefono = '503'+user_data.data.tel;
+                	altaweb2.endpoint = 'SV';
+                	altaweb2.tariff = 1079;
+                }else if(user_data.data.operador=='Claro-Honduras'){
+                	no_telefono = '504'+user_data.data.tel;
+                	altaweb2.endpoint = 'HN';
+                	altaweb2.tariff = 1049;
+                }else if(user_data.data.operador=='Claro-Nicaragua'){
+                	no_telefono = '505'+user_data.data.tel;
+                	altaweb2.endpoint = 'NI';
+                	altaweb2.tariff = 1127;
+                }else if(user_data.data.operador=='Claro-Costa Rica'){
+                	no_telefono = '506'+user_data.data.tel;
+                	altaweb2.endpoint = 'CR';
+                	altaweb2.tariff = 1037;
+                }
     			//
             	get_feeds();
                 get_promos();
@@ -3209,6 +3812,10 @@ function login_normal(){
     		$("#user_pass").val("");
         }
     });
+	}else if(internet==false){
+    	$("#button_login").removeClass("loading");
+        navigator.notification.alert('Necesitas una conexión activa de internet para ingresar', null, 'Voz de Dios','Ok');
+    }
 }
 
 function get_lost_password(){
@@ -3227,7 +3834,7 @@ function get_lost_password(){
                     url: urlws,
                     dataType: 'html',
                     type: 'post',
-                    timeout: 5000,
+                    timeout: 15000,
                     data: {
                         action: 'get_lost_password',
                         app: 'La voz de Dios',
@@ -3236,7 +3843,7 @@ function get_lost_password(){
                         timeOffset: timeOffset
                     },
                     success: function(a,b,c){
-                       	navigator.notification.alert(a,null,'Voz de Dios','ok');
+                       	navigator.notification.alert(a,null,'Voz de Dios','Ok');
                     },
                     error: function(a,b,c){
                         navigator.notification.alert('Ocurrió un imprevisto, intenta de nuevo.',null,'Voz de Dios','ok');
@@ -3270,9 +3877,10 @@ FB.Event.subscribe('auth.statusChange', function(response) {
     console.log('auth.statusChange event');
     getLoginStatus();
 });
-
+var already_called_init = false;
 function getLoginStatus() {
 	if(ajax_fb) return false;
+	already_called_init = true;
     FB.getLoginStatus(function(response) {
         if (response.status == 'connected') {
             FBSTATUS = true;
@@ -3344,6 +3952,9 @@ function fb_logout() {
     if(FBSTATUS){
     	FB.logout(function(response) {
     		setTimeout(function(){window.location = window.location;},2000);
+	    },
+	    function() {
+    		setTimeout(function(){window.location = window.location;},2000);
 	    });
     }else{
     	setTimeout(function(){window.location = window.location;},2000);
@@ -3357,32 +3968,58 @@ function fb_logout() {
 }
 
 function fb_login() {
-	
 	$("#button_facebook_connect").addClass("loading");
-	try{
-	    FB.login(
-	        function(response) {
-	        	console.log(JSON.stringify(response));
-	            if (response.status == "connected"){
-	                me();
-	            }else {
-	             	FBSTATUS = false;
-	             	navigator.notification.alert(
-	                    'No se pudo conectar con facebook, intenta de nuevo.',  // message
-	                    null,         // callback
-	                    'Voz de Dios',            // title
-	                    'ok :('                  // buttonName
-	                );
-	            }
-	        },
-	        { scope: "user_friends, email" }
-	    );
-	}
-	catch(error){}
-	finally{
-		console.log("finally loginFacebook");
-		$("#button_facebook_connect").removeClass("loading");
-	}
+    if(internet){
+		$("#button_facebook_connect").addClass("loading");
+		//try{
+			if(already_called_init){
+			    FB.login(
+			        function(response) {
+			        	console.log(JSON.stringify(response));
+			            if (response.status == "connected"){
+			                me();
+			            }else {
+			             	FBSTATUS = false;
+			             	navigator.notification.alert(
+			                    'No se pudo conectar con facebook, intenta de nuevo.',  // message
+			                    null,         // callback
+			                    'Voz de Dios',            // title
+			                    'ok :('                  // buttonName
+			                );
+			            }
+			        },
+			        { scope: "user_friends, email" }
+			    );
+			}else{
+				FB.init({ appId: "825295254244111", nativeInterface: CDV.FB, useCachedDialogs: false });
+                FB.login(
+                function(response) {
+                    console.log(JSON.stringify(response));
+                    if (response.status == "connected"){
+                        me();
+                    }else {
+                        $("#button_facebook_connect").removeClass("loading");
+                        FBSTATUS = false;
+                        navigator.notification.alert(
+                            'No se pudo conectar con facebook, intenta de nuevo.',  // message
+                            null,         // callback
+                            'Voz de Dios',            // title
+                            'Ok :('                  // buttonName
+                        );
+                    }
+                },
+                { scope: "user_friends,email" });
+			}
+		//}
+		/*catch(error){}
+		finally{
+			console.log("finally loginFacebook");
+		}*/
+    }else{
+    	$("#button_facebook_connect").removeClass("loading");
+        navigator.notification.alert('Necesitas una conexión activa de internet para ingresar', null, 'Voz de Dios','Ok');
+    }
+
 }
 
 function facebookWallPost() {
@@ -3555,6 +4192,7 @@ screen_reglamento.show = function(){
 	focus_trivia = false; 
 	screen_reglamento.removeClass('downed');
 	screen_to_hide.push(screen_reglamento);
+	window.plugins.flurry.logEvent('Ver Reglamento',function(){},function(){});
 };
 screen_reglamento.hide = function(){focus_trivia = true;  screen_reglamento.addClass('downed');};
 
@@ -3570,6 +4208,7 @@ screen_faqs.show = function(){
 	focus_trivia = false; 
 	screen_faqs.removeClass('downed');
 	screen_to_hide.push(screen_faqs);	
+	window.plugins.flurry.logEvent('Ver FAQs',function(){},function(){});
 };
 screen_faqs.hide = function(){
 	focus_trivia = true; screen_faqs.addClass('downed');
@@ -3808,15 +4447,17 @@ function get_4_info(){
     screen_info.slider = null;
     screen_info.scroller.attr('style','');
     screen_info.scroller.css('width','100%');
+    
     var width = $(window).width()*0.9;
+    
     screen_info.scroller.html('');
     screen_info.scroller.css('width',(width*5)+'px');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;"  src="img/Bienvenida/1.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Bienvenida/2.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Bienvenida/3.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Bienvenida/4.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Bienvenida/5.png"/></div> </div>');
-
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block;" width="85%"  src="img/Bienvenida/1.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block; " width="85%" src="img/Bienvenida/2.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block; " width="85%" src="img/Bienvenida/3.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block; " width="85%" src="img/Bienvenida/4.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block; " width="85%" src="img/Bienvenida/5.png"/></div> </div>');
+    
     setTimeout(function(){
         screen_info.slider = new IScroll('#wrapper_info', {
             scrollX: true,
@@ -3838,11 +4479,11 @@ function get_tribus_info(){
 
     screen_info.scroller.html('');
     screen_info.scroller.css('width',(width*5)+'px');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Tribus/1.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Tribus/2.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Tribus/3.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Tribus/4.png"/></div> </div>');
-    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 100%; height: 100%;"><img style="display: block; width:90%!important;" src="img/Tribus/5.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block;" width="85%"  src="img/Tribus/1.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block;" width="85%"  src="img/Tribus/2.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block; " width="85%"  src="img/Tribus/3.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block;" width="85%"  src="img/Tribus/4.png"/></div> </div>');
+    screen_info.scroller.append('<div class="slide_" style="width: '+width+'px !important;"> <div style="width: 90%; height: 90%;"><img style="display: block;" width="85%"  src="img/Tribus/5.png"/></div> </div>');
 
     setTimeout(function(){
         screen_info.slider = new IScroll('#wrapper_info', {
@@ -3909,10 +4550,11 @@ function show_screen(screen){
     	if(!misma) get_trivia();
     }else if(screen=="#screen_timeline"){
     	$("#b0").addClass("selected");
-    	if(misma) {
+    	//if(misma) {
+    		offset = 0;
         	get_feeds();
-        	offset = 0;
-        }
+        	
+        //}
     }else if(screen=="#screen_promos"){
     	$("#b3").addClass("selected");
     	if(misma) get_promos();
@@ -4099,12 +4741,13 @@ function add_points(op){
 }
 
 function invite(){
-	var url = 'http://app.clx.mobi/';
+	var url = 'http://vozdedios.mobi/descarga.html';
     window.plugins.socialsharing.share('Hola, te invito a descargar el APP VOZ DE DIOS para alimentar y fortalecer nuestra fe. '+url,null,null,null,function(){ add_points('invite'); console.log('no lo bajo');});
 }
 
 
 function recordatorio_fn(){
+	/*
 	if(user_data==null || user_data==undefined || user_data=={}) return false;
 	var re = window.localStorage.getItem("recordatorio");
 	if(re==null){
@@ -4119,13 +4762,66 @@ function recordatorio_fn(){
         	var timeout_recordatorio = setTimeout(show_recordatorio,120000);
         }
     }
-	onResume();
+	onResume();*/
+	console.log('recordatorio');
+    checkInternet();
+    var loggedin = window.localStorage.getItem("user_login");
+    if(user_data==null || user_data==undefined || user_data=={}) return false;
+    var re = window.localStorage.getItem("recordatorio");
+    console.log("recordatorio re: "+re);
+    if(re==null){
+    	console.log("entro null recordatorio");
+        //var re = new Date();
+        //re.setDate(re.getDate()+1);
+        //window.localStorage.setItem("recordatorio",re.getTime());
+        if(internet==true && loggedin!='' && loggedin!=null){
+        	console.log('entro timeout recordatorio null');
+    		var timeout_recordatorio = setTimeout(show_recordatorio,120000);
+    		var re2 = new Date();
+            re2.setDate(re2.getDate()+1);
+            window.localStorage.setItem("recordatorio",re2.getTime());
+    	}
+    }else{
+    	console.log('entro else recordatorio');
+    	if(internet==true && loggedin!='' && loggedin!=null){
+    		console.log('entro true else recordatorio');
+	        var now = new Date().getTime();
+	        var diff = (now-re)/(1000*60*60*24);
+	        if(diff >= 1){
+	            //show_recordatorio();
+	        	console.log('entro timeout recordatorio else');
+	        	var timeout_recordatorio = setTimeout(show_recordatorio,120000);
+	        	var re2 = new Date();
+	            re2.setDate(re2.getDate()+1);
+	            window.localStorage.setItem("recordatorio",re2.getTime());
+	        }else{
+	        	console.log('no entro timeout')
+	        }
+    	}
+    }
+    if(internet==true){
+    onResume();
+    }
 }
-
+function show_recordatorio(){		
+	navigator.notification.confirm(
+        '¿Te gustaría compartir ahora VOZ DE DIOS con algún amigo? Gana 3 puntos por cada invitación realizada',
+        function onConfirm(buttonIndex) {
+            if(buttonIndex==1){
+            	window.plugins.flurry.logEventWithParameters('Invitar Amigos',{estado:user_estado,desde:'Recordatorio'},function(){},function(){});
+                
+                invite();
+            }
+            
+        },
+        'Voz de Dios',
+        ['Sí, vamos','Cancelar']
+    );
+}
 var ajax_resume = null;
 function onResume() {
 	console.log("resume");
-	
+	window.plugins.flurry.startSession('PDDKKSWJQ6JNPG3S8NF7',function(){},function(){});
 	if(user_login!='' && user_pass !=''){
 		if(ajax_resume==null){
 			ajax_resume = $.ajax({
@@ -4159,30 +4855,20 @@ function onResume() {
 	}
 	
 }
-
-
-
-function show_recordatorio(){		
-	navigator.notification.confirm(
-        '¿Te gustaría compartir ahora VOZ DE DIOS con algún amigo? Gana 3 puntos por cada invitación realizada',
-        function onConfirm(buttonIndex) {
-            if(buttonIndex==1){
-                invite();
-            }
-            var re = new Date();
-            re.setDate(re.getDate()+1);
-            window.localStorage.setItem("recordatorio",re.getTime());
-        },
-        'Voz de Dios',
-        ['Sí, vamos','Cancelar']
-    );
+function onPause(){
+	window.plugins.flurry.endSession(function(){},function(){});
 }
+
+
+
 
 function backbutton(){
 	if(screen_to_hide.length > 0){		
 		screen_to_hide.pop().hide();
 		SoftKeyboard.hide();
 		return false;
+	}else{
+		navigator.app.exitApp();
 	}	
 	console.log(screen_login[0].outerHTML);	
 	if(screen_login.hasClass('lefted')) {
@@ -4194,27 +4880,35 @@ function backbutton(){
 }
 
 function checkInternet(){
+	/*
 	var networkState = navigator.connection.type;
 	console.log("networkstate "+JSON.stringify(networkState));
     if(networkState==Connection.UNKNOWN || networkState==Connection.NONE){
     	navigator.notification.alert('Necesitas acceso a internet para el uso del app',null,'La Voz Dios','Ok');
     	internet_checked=true;
+    }*/
+	var networkState = navigator.connection.type;
+    if(networkState==Connection.UNKNOWN || networkState==Connection.NONE){
+    	
+    	internet=false;
     }
 }
-
+var internet = true;
 function goesOffline(){
+	internet = false;
 	if(internet_checked==false){
-		navigator.notification.alert('Necesitas acceso a internet para el uso del app',null,'La Voz Dios','Ok');
+		navigator.notification.alert('Necesitas acceso a internet para el uso del app',null,'Voz Dios','Ok');
 		internet_checked=true;
 	}
 }
 
 function goesOnline(){
+	internet = true;
 	internet_checked = false;
 }
 
 function deviceready() {
-	
+	window.plugins.flurry.startSession('PDDKKSWJQ6JNPG3S8NF7',function(){},function(){});
 	var d = new Date()
 	var n = d.getTimezoneOffset()/60;
 	timeOffset = parseInt(n*-1);
@@ -4223,19 +4917,41 @@ function deviceready() {
 	window.onerror = function(message, url, lineNumber) {
         console.log("Error: "+message+" in "+url+" at line "+lineNumber);
     }
-	
+	document.addEventListener("pause", onPause, false);
     document.addEventListener("offline", goesOffline, false);
     document.addEventListener("online", goesOnline, false);
     document.addEventListener('resume', recordatorio_fn, false);
     document.addEventListener('backbutton', backbutton, false);    
-	
+    document.addEventListener('showkeyboard',function(){
+    	if(!screen_perfil.hasClass('hidden')){
+    		console.log('showkeyboard');
+    		screen_perfil.wrapper.scrollTo('#tel');
+    	}
+    	});
     FastClick.attach(document.body);
     pushNotification = window.plugins.pushNotification;
     setPushes();   
     agregar_options();
-  
+    
+    
 }
-
+$.fn.scrollTo = function( target, options, callback ){
+	  if(typeof options == 'function' && arguments.length == 2){ callback = options; options = target; }
+	  var settings = $.extend({
+	    scrollTarget  : target,
+	    offsetTop     : 50,
+	    duration      : 500,
+	    easing        : 'swing'
+	  }, options);
+	  return this.each(function(){
+	    var scrollPane = $(this);
+	    var scrollTarget = (typeof settings.scrollTarget == "number") ? settings.scrollTarget : $(settings.scrollTarget);
+	    var scrollY = (typeof scrollTarget == "number") ? scrollTarget : scrollTarget.offset().top + scrollPane.scrollTop() - parseInt(settings.offsetTop);
+	    scrollPane.animate({scrollTop : scrollY }, parseInt(settings.duration), settings.easing, function(){
+	      if (typeof callback == 'function') { callback.call(this); }
+	    });
+	  });
+	}
 document.addEventListener('deviceready', deviceready, false);
 
 //END Controller
@@ -4244,16 +4960,18 @@ document.addEventListener('deviceready', deviceready, false);
 // Datepicker
 
 	//Variables
-var date_nacimiento = null;
+var date_nacimiento = new Date();
 var options = {
-	    date: new Date(),
-	    mode: 'date'
+	    date: date_nacimiento,
+	    mode: 'date',
+	    maxdate: new Date()
 	};
 	//Funciones
 
 
 	function onSuccessDate(date) {
 		date_nacimiento = date;
+		
 	    //alert('Selected date: ' + date);
 		$('#datePicker').val(date.getDate()+'/'+(date.getMonth()+1)+'/'+date.getFullYear());
 	}

@@ -23,7 +23,7 @@
             <wrapper id="wrap">
             	
             </wrapper>
-            <nfeed style='display:none;' onclick="refresh_from_nfeed();">Hay nuevas entradas!</nfeed>
+            <nfeed style='display:none;' onclick="refresh_from_nfeed();">¡Hay nuevas entradas!</nfeed>
         </screen>
         
         <screen id="screen_trivia"   class="hidden">
@@ -60,7 +60,7 @@
             <wrapper>
             </wrapper>
             <comment_control>
-                <textarea class="input_comment" data-id="" id="commenttxt" placeholder="Haz tap y escribe un comentario"></textarea>
+                <textarea class="input_comment" data-id="" id="commenttxt" data-desde="" placeholder="Haz tap y escribe un comentario"></textarea>
                 <button class="button_send_comment" onclick="send_comment(this);">Publicar</button>
                 <div class="clear"></div>
             </comment_control>
@@ -78,7 +78,7 @@
                 <button class="" onclick="show_screen('#screen_timeline'); screen_config.hide();">Vamos al muro</button>-->
                 <button class="logout" onclick="fb_logout()">Cerrar sesión</button>
                 <h4>Social</h4>
-                <button class="" onclick="invite();">Invitar amigos</button>
+                <button class="" onclick="invite();window.plugins.flurry.logEventWithParameters('Invitar Amigos',{estado:user_estado,desde:'Menu'},function(){},function(){});">Invitar amigos</button>
                 <button class="" onclick="show_friends_search();">Buscar amigos en Voz de Dios</button>
                 <h4>Soporte</h4>
                 <button class="" onclick="screen_ayuda.show();">Ayuda</button>
@@ -96,10 +96,10 @@
                 
             </screen_title>
             <wrapper>
-                <button class="" onclick="screen_faqs.show();">PREGUNTAS FRECUENTES</button>
-                <button class="" onclick="screen_fallas.show();">REPORTAR FALLAS<br>Informar sobre un problema</button>
-                <button class="" onclick="screen_sugerencias.show();">SUGERENCIAS<br>Tu opinión es valiosa para nosotros</button>
-                <button class="" onclick="screen_acercade.show();">ACERCA DE</button>
+                <button class="" style='background-color:white;' onclick="screen_faqs.show();">PREGUNTAS FRECUENTES</button>
+                <button class="" style='background-color:white;' onclick="screen_fallas.show();">REPORTAR FALLAS<br>Informar sobre un problema</button>
+                <button class="" style='background-color:white;'onclick="screen_sugerencias.show();">SUGERENCIAS<br>Tu opinión es valiosa para nosotros</button>
+                <button class="" style='background-color:white;' onclick="screen_acercade.show();">ACERCA DE</button>
             </wrapper>
         </screen>
         <screen id="screen_falla"   class="no_normal righted">
@@ -161,7 +161,7 @@
             <wrapper>
                 <div id='div_acercade'>
                     <p>Aplicación para creyentes que permite compartir con otros miembros de la comunidad, estrechar el vínculo con Dios al disfrutar de la mejor selección de contenido digital para reforzar la fe, fomentar el amor al prójimo y  la reflexión sobre la palabra y mejorar el conocimiento de la biblia.</p>
-                    <p>Versión 1.1</p>
+                    <p>Versión 1.2</p>
                     <p>info@vozdedios.mobi</p>
                 </div>
             </wrapper>
@@ -276,8 +276,7 @@
                 Registro
             </screen_title>
             <wrapper>
-            	<br>
-                <br>
+            	
                 <div class="logo"></div>
                 <br>
                 <select id="new_user_country">
@@ -436,7 +435,7 @@
 		    <!-- Modal content-->
 		    <div class="modal-content">
 		      <div class="modal-header">
-		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <button type="button" class="close" data-dismiss="modal" onclick='cancel_report();'>&times;</button>
 		        <h4 class="modal-title">Denuncia este contenido</h4>
 		      </div>
 		      <div class="modal-body">
@@ -499,7 +498,9 @@
         
         <!-- controller -->
         <script type="text/javascript" src="js/lib/apn.js"></script>
+        <script type="text/javascript" src="js/lib/flurryPlugin.js"></script>
         <script type="text/javascript" src="js/lvd.js"></script>
+        
 		
 
         <!--  

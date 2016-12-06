@@ -1236,6 +1236,7 @@ scroller{
 	display:-webkit-box;
 	-webkit-box-pack:center;
 	-webkit-box-align:center;
+	background-size:30px;
 }
 
 .slide_ img{
@@ -1303,15 +1304,16 @@ scroller{
 	background-color: white;
     color: #00adff;
 }
-
+#impresion, #operador{
+	text-align:justify;
+}
 .share_promo{
 	width: 80%;
-    height: 40px;
+    height: 25px;
     color: white;
-    font-size: 16px;
+    font-size: 13px!important;
     background-color: #00adff;
     color: white;
-    height: 50px;
     display: block;
     margin: 0 auto;
     border-radius: 5px;
@@ -1409,7 +1411,7 @@ scroller{
 	width: 50%;
 }
 .loadmore{
-	margin-top: -100px;
+	/*margin-top: -100px;*/
 }
 
 /*ZOOM EN IMAGENES*/

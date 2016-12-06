@@ -14,7 +14,7 @@ function show_promos_apn(){
     screen_faqs.hide();    
     screen_write.hide();             
     ir_a_promos_ = false;
-    jQuery("#noti_script").html(script);
+    //jQuery("#noti_script").html(script);
 }
 
 function exec_noti(){
@@ -168,4 +168,29 @@ function setPushes(){
         
         console.log('pasa por aqui');
     }
+}
+function exito_noti(){};
+function error_noti(){};
+function onNotificationAPN(event){
+    if ( event.sound )
+    {
+        var snd = new Media(event.sound);
+        snd.play();
+    }
+    
+    if ( event.badge )
+    {
+        pushNotification.setApplicationIconBadgeNumber(exito_noti, error_noti, event.badge);
+    }
+    navigator.notification.confirm(
+                                   event.alert+', ¿Deseas ver más?',
+                                   function(btn){
+                                   if(btn==1){
+                                   show_promos_apn();
+                                   eval(event.action);
+                                   }
+                                   },
+                                   'Voz de Dios',
+                                   ['Sí, vamos!','Ahora no']
+                                   );
 }

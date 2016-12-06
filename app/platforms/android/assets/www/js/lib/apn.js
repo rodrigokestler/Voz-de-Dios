@@ -57,7 +57,7 @@ function onNotification(e) {
                     }
                 },
                 'La voz de Dios',
-                ['Si, vamos!','Ahora no']
+                ['Sí, vamos!','Ahora no']
             );
         }else{
             if ( e.coldstart )
@@ -189,6 +189,6 @@ function onNotificationAPN(){
 	                }
 	            },
 	            'I Love Concerts',
-	            ['Si, vamos!','Ahora no']
+	            ['Sí, vamos!','Ahora no']
 	        );
 }

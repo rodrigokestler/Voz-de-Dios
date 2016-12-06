@@ -5108,28 +5108,38 @@ FB.provide('', {
     if (FB._nativeInterface) {
         switch (params.method) {
             case 'auth.login':
-                FB._nativeInterface.login(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on login!' + e);});
+                FB._nativeInterface.login(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on login!' + e);$("#button_facebook_connect").removeClass("loading");
+                	if(internet==false){
+                		navigator.notification.alert('Necesitas una conexión activa de internet para ingresar', null, 'I Love Concerts','Ok');
+                	    
+                	}
+                });
                 break;
             case 'permissions.request':
-                FB._nativeInterface.login(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on login!' + e);});
+                FB._nativeInterface.login(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on login!' + e);$("#button_facebook_connect").removeClass("loading");});
                 break;
             case 'permissions.oauth':
-                FB._nativeInterface.login(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on login!' + e);});
+                FB._nativeInterface.login(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on login!' + e);$("#button_facebook_connect").removeClass("loading");
+                	if(internet==false){
+            		navigator.notification.alert('Necesitas una conexión activa de internet para ingresar', null, 'I Love Concerts','Ok');
+            	    
+                	}
+                });
                 break;
             case 'auth.logout':
                 FB._nativeInterface.logout(cb, function(e) {console.log('Cordova Facebook Connect plugin fail on logout!');});
                 break;
             case 'auth.status':
-                FB._nativeInterface.getLoginStatus(cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');});
+                FB._nativeInterface.getLoginStatus(cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');$("#button_facebook_connect").removeClass("loading");});
                 break;
             case 'login.status':
-                FB._nativeInterface.getLoginStatus(cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');});
+                FB._nativeInterface.getLoginStatus(cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');$("#button_facebook_connect").removeClass("loading");});
                 break;
             case 'feed':
-                FB._nativeInterface.dialog(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');});
+                FB._nativeInterface.dialog(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');$("#button_facebook_connect").removeClass("loading");});
                 break;
             case 'apprequests':
-                FB._nativeInterface.dialog(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');});
+                FB._nativeInterface.dialog(params, cb, function(e) {console.log('Cordova Facebook Connect plugin fail on auth.status!');$("#button_facebook_connect").removeClass("loading");});
             break;
         }
         return;
